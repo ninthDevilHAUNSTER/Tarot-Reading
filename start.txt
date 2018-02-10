@@ -1,0 +1,1 @@
+cd C:\python\winter_semester\CTF_learning\crom && python my_first_cron.py
