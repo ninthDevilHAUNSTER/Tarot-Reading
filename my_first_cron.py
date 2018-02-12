@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import requests
 import pymysql
 import time
+from google_translation import translation_tool as T_tool
 
 test_string = """Card 6:  The likely outcome »
 The Hermit
@@ -53,6 +54,7 @@ def locate():
     for i in list:
         name.append(i[3:-4])
     return name[1:1 + 22]
+
 
 import random
 
@@ -160,7 +162,7 @@ def database_create():
     cursor = db.cursor()
 
     for i in range(0, 22):
-        string = "CREATE TABLE %s ( id int(5) NOT NULL , text varchar(1000))" % big_arcana_dict[i]
+        string = "alter table tarot.%s CONVERT TO CHARACTER SET utf8" % big_arcana_dict[i]
         # 使用 execute()  方法执行 SQL 查询
         cursor.execute(string)
 
@@ -251,10 +253,11 @@ def database_avoid_cycle(table, id):
         db.close()
         return True
 
+
 def database_delete_all():
     # 打开数据库连接
     db = pymysql.connect("localhost", "root", "", "tarot")
-    for i in range(0,22):
+    for i in range(0, 22):
         # 使用cursor()方法获取操作游标
         cursor = db.cursor()
 
@@ -273,6 +276,51 @@ def database_delete_all():
     db.close()
 
 
+def database_translate_content(table, id):
+    # 打开数据库连接
+    db = pymysql.connect("localhost", "root", "", "tarot")
+
+    # 使用cursor()方法获取操作游标
+    cursor = db.cursor()
+
+    # SQL 查询语句
+    sql = "SELECT * from %s WHERE id=%s LIMIT 0,1" % (table, id)
+    # print(sql)
+    try:
+        # 执行SQL语句
+        cursor.execute(sql)
+        # 获取所有记录列表
+        results = cursor.fetchall()
+        for row in results:
+            text = row[1]
+            text = (T_tool(text))
+            #print(text)
+            database_insert_translate(table, id, text)
+    except:
+        print("Error: unable to fetch data")
+    # 关闭数据库连接
+    db.close()
+
+
+def database_insert_translate(tables_name, id, text):
+    """
+    不知道咋中文就是进不去，后来觉得写个文件得了。
+    :param tables_name:
+    :param id:
+    :param text:
+    :return:
+    """
+    sql = "UPDATE %s SET cn_data='%s' WHERE id=%s;" % (tables_name, text, id)
+    f = open("sql.txt", "a")
+    f.write(sql + "\n" + "COMMIT;" + "\n")
+
+
+def translate_main_function():
+    for table_name in big_arcana_dict.values():
+        for id in "123456":
+            database_translate_content(table_name, id)
+
+
 def main():
     """
     135432416-135434556
@@ -285,8 +333,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    #translate_main_function()
+    # main()
     # stringmaker(string)
     # stringmaker(string=test_string)
     # database_select(6,"hermit")
     # database_delete_all()
+    # database_create()
+    for i in range(0,22):
+        print (str(i)+"=>"+"\""+big_arcana_dict[i]+"\""+",")
